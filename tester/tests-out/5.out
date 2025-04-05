@@ -1,0 +1,36 @@
+Header: HTTP/1.0 404 Not found
+Header: Content-Type: text/html
+Header: Content-Length: 183
+<!doctype html>
+<head>
+  <title>OSTEP WebServer Error</title>
+</head>
+<body>
+  <h2>404: Not found</h2>
+  <p>server could not find this file: ./index.html</p>
+</body>
+</html>
+Header: HTTP/1.0 404 Not found
+Header: Content-Type: text/html
+Header: Content-Length: 183
+<!doctype html>
+<head>
+  <title>OSTEP WebServer Error</title>
+</head>
+<body>
+  <h2>404: Not found</h2>
+  <p>server could not find this file: ./index.html</p>
+</body>
+</html>
+Header: HTTP/1.0 404 Not found
+Header: Content-Type: text/html
+Header: Content-Length: 183
+<!doctype html>
+<head>
+  <title>OSTEP WebServer Error</title>
+</head>
+<body>
+  <h2>404: Not found</h2>
+  <p>server could not find this file: ./index.html</p>
+</body>
+</html>

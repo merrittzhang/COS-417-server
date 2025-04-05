@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "inet.h": "c",
+        "io_helper.h": "c",
+        "stat.h": "c",
+        "string.h": "c"
+    }
+}
