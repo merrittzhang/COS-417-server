@@ -3,6 +3,7 @@
         "inet.h": "c",
         "io_helper.h": "c",
         "stat.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "request.h": "c"
     }
 }
