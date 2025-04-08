@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <bits/getopt_core.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -9,7 +10,6 @@
 #include <unistd.h>
 #include "io_helper.h"
 #include "request.h"
-#include <bits/getopt_core.h>
 
 #define MAXBUF 8192
 
@@ -98,6 +98,11 @@ int main(int argc, char *argv[]){
 		}
 
 	// run out of this directory
+	if (port < 1024 || port > 65535) {
+		fprintf(stderr, "Invalid port number: %d. Port must be between 1024 and 65535.\n", port);
+		exit(1);
+	}
+
 	if(strcmp(schedalg_str, "SFF") == 0)
 		sched = SFF_SCHED;
 	else
@@ -119,14 +124,20 @@ int main(int argc, char *argv[]){
 		free(request_buffer);
 		exit(1);
 	}
-	for(int i = 0; i < num_threads; i++) {
-		if (pthread_create(&thread_ids[i], NULL, worker_thread, NULL) != 0) {
+	for(int i = 0; i < num_threads; i++){
+		if(pthread_create(&thread_ids[i], NULL, worker_thread, NULL) != 0){
 			perror("pthread_create");
 			free(request_buffer);
 			free(thread_ids);
 			exit(1);
 		}
-	}
+		if(pthread_detach(thread_ids[i]) != 0){
+			perror("pthread_detach");
+			free(request_buffer);
+			free(thread_ids);
+			exit(1);
+		}
+	}	
 
 	int listen_fd = open_listen_fd_or_die(port);
 	printf("Server listening... on port %d\n", port);
