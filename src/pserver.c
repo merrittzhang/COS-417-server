@@ -33,38 +33,46 @@ typedef struct {
 request_t *request_buffer = NULL;
 int buffer_capacity = 0;
 int request_count = 0;
+int head = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
 
 void *worker_thread(void *arg) {
-	(void)arg;
-	while(1){
-		pthread_mutex_lock(&mutex);
-		while(request_count == 0)
-			pthread_cond_wait(&not_empty, &mutex);
-		request_t req;
-		if(sched == FIFO_SCHED){
-			req = request_buffer[0];
-			for(int i = 1; i < request_count; i++)
-				request_buffer[i - 1] = request_buffer[i];
-			request_count--;
-		} else {
-			int minIndex = 0;
-			for(int i = 1; i < request_count; i++)
-				if (request_buffer[i].filesize < request_buffer[minIndex].filesize)
-					minIndex = i;
-			req = request_buffer[minIndex];
-			request_buffer[minIndex] = request_buffer[request_count - 1];
-			request_count--;
-		}
-		pthread_cond_signal(&not_full);
-		pthread_mutex_unlock(&mutex);
-		request_handle(req.conn_fd);
-		close_or_die(req.conn_fd);
-	}
-	return NULL;
+    (void)arg;
+    while(1){
+        pthread_mutex_lock(&mutex);
+        while(request_count == 0)
+            pthread_cond_wait(&not_empty, &mutex);
+        request_t req;
+        if(sched == FIFO_SCHED){
+            req = request_buffer[head];
+            head = (head + 1) % buffer_capacity;
+            request_count--;
+        } else {
+            int min_relative = 0;
+            int min_index = (head + 0) % buffer_capacity;
+            for(int i = 1; i < request_count; i++){
+                int idx = (head + i) % buffer_capacity;
+                if(request_buffer[idx].filesize < request_buffer[min_index].filesize){
+                    min_relative = i;
+                    min_index = idx;
+                }
+            }
+            req = request_buffer[min_index];
+            int last_index = (head + request_count - 1) % buffer_capacity;
+            request_buffer[min_index] = request_buffer[last_index];
+            request_count--;
+            if(min_index == head)
+                head = (head + 1) % buffer_capacity;
+        }
+        pthread_cond_signal(&not_full);
+        pthread_mutex_unlock(&mutex);
+        request_handle(req.conn_fd);
+        close_or_die(req.conn_fd);
+    }
+    return NULL;
 }
 
 int main(int argc, char *argv[]){
@@ -200,7 +208,8 @@ int main(int argc, char *argv[]){
 		pthread_mutex_lock(&mutex);
 		while(request_count == buffer_capacity)
 			pthread_cond_wait(&not_full, &mutex);
-		request_buffer[request_count] = req;
+		int tail = (head + request_count) % buffer_capacity;
+		request_buffer[tail] = req;
 		request_count++;
 		pthread_cond_signal(&not_empty);
 		pthread_mutex_unlock(&mutex);
