@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "io_helper.h"
 #include "request.h"
+#include <bits/getopt_core.h>
 
 #define MAXBUF 8192
 
@@ -115,12 +116,20 @@ int main(int argc, char *argv[]){
 	pthread_t *thread_ids = malloc(sizeof(pthread_t) * num_threads);
 	if (thread_ids == NULL) {
 		perror("malloc");
+		free(request_buffer);
 		exit(1);
 	}
-	for(int i = 0; i < num_threads; i++)
-		pthread_create(&thread_ids[i], NULL, worker_thread, NULL);
+	for(int i = 0; i < num_threads; i++) {
+		if (pthread_create(&thread_ids[i], NULL, worker_thread, NULL) != 0) {
+			perror("pthread_create");
+			free(request_buffer);
+			free(thread_ids);
+			exit(1);
+		}
+	}
 
 	int listen_fd = open_listen_fd_or_die(port);
+	printf("Server listening... on port %d\n", port);
 	while(1){
 		struct sockaddr_in client_addr;
 		int client_len = sizeof(client_addr);
@@ -185,5 +194,7 @@ int main(int argc, char *argv[]){
 		pthread_cond_signal(&not_empty);
 		pthread_mutex_unlock(&mutex);
 	}
+	free(request_buffer);
+	free(thread_ids);
 	return 0;
 }
