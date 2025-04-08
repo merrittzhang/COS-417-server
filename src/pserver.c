@@ -51,12 +51,10 @@ void *worker_thread(void *arg) {
             head = (head + 1) % buffer_capacity;
             request_count--;
         } else {
-            int min_relative = 0;
             int min_index = (head + 0) % buffer_capacity;
             for(int i = 1; i < request_count; i++){
                 int idx = (head + i) % buffer_capacity;
                 if(request_buffer[idx].filesize < request_buffer[min_index].filesize){
-                    min_relative = i;
                     min_index = idx;
                 }
             }
