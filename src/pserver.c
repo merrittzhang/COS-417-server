@@ -151,7 +151,7 @@ int main(int argc, char *argv[]){
 	printf("Server listening... on port %d\n", port);
 	while(1){
 		struct sockaddr_in client_addr;
-		int client_len = sizeof(client_addr);
+		socklen_t client_len = sizeof(client_addr);
 		int conn_fd = accept_or_die(listen_fd, (sockaddr_t *)&client_addr, (socklen_t *)&client_len);
 
 		int filesize = 0;
