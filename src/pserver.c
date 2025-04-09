@@ -20,7 +20,7 @@ int default_buffers = 1;
 char default_schedalg[] = "FIFO";
 
 //
-// ./pserver [-d <basedir>] [-p <portnum>] 
+// ./pserver [-d <basedir>] [-p <portnum>] [-t <threads>] [-b <buffers>] [-s <schedalg>]
 // 
 typedef enum { FIFO_SCHED, SFF_SCHED } sched_alg_t;
 sched_alg_t sched = FIFO_SCHED;
@@ -45,6 +45,18 @@ void *worker_thread(void *arg) {
         pthread_mutex_lock(&mutex);
         while(request_count == 0)
             pthread_cond_wait(&not_empty, &mutex);
+
+        if(sched == SFF_SCHED && request_count == 1){
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_nsec += 100 * 1000000;
+            if(ts.tv_nsec >= 1000000000){
+                ts.tv_sec += ts.tv_nsec / 1000000000;
+                ts.tv_nsec %= 1000000000;
+            }
+            pthread_cond_timedwait(&not_empty, &mutex, &ts);
+        }
+
         request_t req;
         if(sched == FIFO_SCHED){
             req = request_buffer[head];
@@ -54,9 +66,8 @@ void *worker_thread(void *arg) {
             int min_index = (head + 0) % buffer_capacity;
             for(int i = 1; i < request_count; i++){
                 int idx = (head + i) % buffer_capacity;
-                if(request_buffer[idx].filesize < request_buffer[min_index].filesize){
+                if(request_buffer[idx].filesize < request_buffer[min_index].filesize)
                     min_index = idx;
-                }
             }
             req = request_buffer[min_index];
             int last_index = (head + request_count - 1) % buffer_capacity;
@@ -125,7 +136,7 @@ int main(int argc, char *argv[]){
 	}
 
 	pthread_t *thread_ids = malloc(sizeof(pthread_t) * num_threads);
-	if (thread_ids == NULL) {
+	if(thread_ids == NULL){
 		perror("malloc");
 		free(request_buffer);
 		exit(1);
