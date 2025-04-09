@@ -103,12 +103,12 @@ int main(int argc, char *argv[]){
 			exit(1);
 		}
 
-	// run out of this directory
 	if (port < 1024 || port > 65535) {
 		fprintf(stderr, "Invalid port number: %d. Port must be between 1024 and 65535.\n", port);
 		exit(1);
 	}
 
+	// run out of this directory
 	if(strcmp(schedalg_str, "SFF") == 0)
 		sched = SFF_SCHED;
 	else
